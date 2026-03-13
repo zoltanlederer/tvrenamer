@@ -53,29 +53,32 @@ pattern = re.compile(r"S(\d{2})E(\d{2})", re.IGNORECASE)
 
 # Loop through all files in the folder
 for file in folder.iterdir():
-    # print("file.name:", file.name)
-    match = pattern.search(file.name)
-    if match:
-        season = int(match.group(1))
-        episode = int(match.group(2))
+    if file.is_file():
+        # print("file.name:", file.name)
+        match = pattern.search(file.name)
+        if match:
+            season = int(match.group(1))
+            episode = int(match.group(2))
 
-        episode_code = f"S{season:02}E{episode:02}"
-        extension = file.suffix
+            episode_code = f"S{season:02}E{episode:02}"
+            extension = file.suffix
+            
+            show_part = pattern.sub("", file.stem)
+            show_name = show_part.replace(".", " ").strip()
+            new_name = f"{show_name} - {episode_code}{extension}"
 
-        new_name = f"{episode_code}{extension}"
-
-        print("Original", file.name)
-        print("New name:", new_name)
-        print()
-
-        # print(match.groups())
-        # print(f"{file.name} -> Season {season}, Episode {episode}")
-        
-        # print("FULL MATCH:", match.group(0))
-        # print("SEASON:", match.group(1))
-        # print("EPISODE:", match.group(2))
-        # print("ALL GROUPS:", match.groups())
-        # print(file.name, "→", match)
-    else:
-        print(f"{file.name} -> No match found")
+            print(f"Original: {file.name}")
+            print(f"New name: {new_name}")
+            print()
+            
+            # print(match.groups())
+            # print(f"{file.name} -> Season {season}, Episode {episode}")
+            
+            # print("FULL MATCH:", match.group(0))
+            # print("SEASON:", match.group(1))
+            # print("EPISODE:", match.group(2))
+            # print("ALL GROUPS:", match.groups())
+            # print(file.name, "→", match)
+        else:
+            print(f"{file.name} -> No match found")
 
