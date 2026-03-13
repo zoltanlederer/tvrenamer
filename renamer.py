@@ -66,10 +66,14 @@ for file in folder.iterdir():
             show_part = pattern.sub("", file.stem)
             show_name = show_part.replace(".", " ").strip()
             new_name = f"{show_name} - {episode_code}{extension}"
+            new_path = file.with_name(new_name)
 
             print(f"Original: {file.name}")
             print(f"New name: {new_name}")
+            print(f"Rename: {file.name} -> {new_name}")
             print()
+
+            # file.rename(new_path)
             
             # print(match.groups())
             # print(f"{file.name} -> Season {season}, Episode {episode}")
