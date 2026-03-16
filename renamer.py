@@ -41,6 +41,16 @@ import re
 #   "dot"  → The.Office.S02E06.mkv
 style = "dot"
 
+# Supported video and subtitle file types
+MEDIA_EXTENSIONS = {
+    ".mkv", ".mp4", ".avi", ".mov",
+    ".srt", ".sub", ".ass", ".vtt"
+}
+
+# If True → preview only (no files renamed)
+# If False → files will actually be renamed
+dry_run = False
+
 # ===============================
 # FOLDER SETUP
 # ===============================
@@ -188,6 +198,9 @@ def extract_show_name(filename: str) -> str:
         "The Office"
     """
 
+    # Normalize separators first
+    filename = filename.replace(".", " ").replace("_", " ")
+
     match_show = show_pattern.search(filename)
 
     if match_show:
@@ -210,6 +223,12 @@ def extract_show_name(filename: str) -> str:
         # strip() removes spaces from start and end.
         show_name = show_name.strip()
 
+        # Remove trailing separators like "-" or "."
+        show_name = show_name.rstrip("-_. ")
+
+        # Convert to Title Case
+        show_name = show_name.title()
+
         return show_name
 
     # If we couldn't extract a show name,
@@ -229,9 +248,11 @@ def build_new_filename(show_name: str, episode_code: str, extension: str) -> str
     style = "dash"  → The Office - S02E06.mkv
     style = "dot"   → The.Office.S02E06.mkv
     """
+    # Dash style
     if style == "dash":
         return f"{show_name} - {episode_code}{extension}"
 
+    # Dot style
     if style == "dot":
         show_name_clean = show_name.replace(" ", ".")
         return f"{show_name_clean}.{episode_code}{extension}"
@@ -251,6 +272,14 @@ for file in folder.iterdir():
     # file.is_file() ensures we only process files,
     # not subfolders.
     if not file.is_file():
+        continue
+
+    # Ignore hidden files like .DS_Store
+    if file.name.startswith("."):
+        continue
+
+    # Skip non-video and subtitle files
+    if file.suffix.lower() not in MEDIA_EXTENSIONS:
         continue
 
     # file.stem returns filename WITHOUT extension.
@@ -281,10 +310,22 @@ for file in folder.iterdir():
     #
     new_path = file.with_name(new_name)
 
+    # Safety check: do not overwrite existing files
+    if new_path.exists():
+        print(f"Skipping (file already exists): {new_path}")
+        continue
+
     # Print preview
     print(f"Original: {file.name}")
     print(f"New name: {new_name}")
     print(f"Rename: {file.name} -> {new_name}")
+
+    if dry_run:
+        print(f"[DRY RUN] Would rename: {file} -> {new_path}")
+    else:
+        print(f"Renaming: {file.name} -> {new_path}")
+        file.rename(new_path)
+
     print()
 
     # Uncomment this line to actually rename the file
