@@ -83,6 +83,7 @@ args = parser.parse_args()
 # GLOBAL SETTINGS
 # ===============================
 
+# Defaults are already handled in parser.add_argument()
 # These will always have valid values:
 # - folder: either default or user-provided
 # - style: either default or user-provided
@@ -305,71 +306,172 @@ def build_new_filename(show_name: str, episode_code: str, extension: str) -> str
 
 
 # ===============================
-# MAIN LOOP: PROCESS FILES
+# PREVIEW TABLE AND FINAL CONFIRMATION
 # ===============================
+#
+# This section collects all files that need to be renamed,
+# prints a table showing the original and new filenames,
+# and optionally asks the user to confirm before actually renaming.
+# Features:
+#   - Skips hidden files like .DS_Store
+#   - Skips unsupported file types
+#   - Skips files where the new name already exists
+#   - Prints a neat preview table
+#   - Dry-run mode shows table only
+#   - Real-run mode asks for confirmation before renaming
+#
 
-# folder.iterdir() loops through everything inside the folder
-# (files AND directories).
+# Create an empty list to store files we plan to rename.
+# Each item will be a tuple: (original_name, new_name, file_path, new_path)
+files_to_rename = []
+
+# Loop through all items in the target folder
 for file in folder.iterdir():
 
-    # file.is_file() ensures we only process files,
-    # not subfolders.
+    # Skip anything that is not a file
     if not file.is_file():
         continue
 
-    # Ignore hidden files like .DS_Store
+    # Skip hidden files (like .DS_Store on macOS)
     if file.name.startswith("."):
         continue
 
-    # Skip non-video and subtitle files
+    # Only process supported video and subtitle files
     if file.suffix.lower() not in MEDIA_EXTENSIONS:
         continue
 
-    # file.stem returns filename WITHOUT extension.
-    #
-    # Example:
-    # "The.Office.S02E05.mkv"
-    #
-    # file.stem → "The.Office.S02E05"
-    #
+    # Extract season and episode numbers from the filename
     season, episode = get_season_episode(file.stem)
 
-    # If no season/episode was found, skip the file.
+    # If no season/episode found, skip this file
     if season is None:
-        print(f"{file.name} -> No match found")
         continue
 
-    # Format the episode code
-    episode_code = format_episode_code(season, episode)
-
-    # Extract the show name
+    # Extract show name (normalized, title-cased)
     show_name = extract_show_name(file.stem)
 
-    # Build the final filename
+    # Format the episode code, e.g., S02E05
+    episode_code = format_episode_code(season, episode)
+
+    # Build the final filename based on chosen style (dash/dot)
     new_name = build_new_filename(show_name, episode_code, file.suffix)
 
-    # file.suffix returns the extension
-    # Example: ".mkv"
-    #
+    # Build a Path object for the new file path
     new_path = file.with_name(new_name)
 
-    # Safety check: do not overwrite existing files
+    # Safety check: skip files if the new filename already exists
     if new_path.exists():
-        print(f"Skipping (file already exists): {new_path}")
+        print(f"Skipping (file already exists): {new_path.name}")
         continue
 
-    # Print preview
-    print(f"Original: {file.name}")
-    print(f"New name: {new_name}")
-    print(f"Rename: {file.name} -> {new_name}")
+    # Add this file to the list of files to rename
+    files_to_rename.append((file.name, new_name, file, new_path))
 
-    if dry_run:
-        print(f"[DRY RUN] Would rename: {file} -> {new_path}")
+
+# SHOW PREVIEW TABLE
+# This prints a neat table of original filenames and what they would be renamed to.
+
+if not files_to_rename:
+    # If no files to rename, notify the user
+    print("No files found to rename.\n")
+else:
+    # Print table header
+    print("\nPreview Table:")
+    print(f"{'Original Name':<40} {'New Name':<40}")
+    print("-" * 80)
+
+    # Print each file pair (original -> new name)
+    for original, new_name, _, _ in files_to_rename:
+        print(f"{original:<40} {new_name:<40}")
+    print()  # blank line after table
+
+
+# FINAL ACTION: DRY RUN OR CONFIRMATION
+
+if dry_run:
+    # If dry-run, only show the table
+    print("[DRY RUN] No files were actually renamed.\n")
+else:
+    # Ask the user to confirm renaming
+    confirm = input("Proceed with renaming these files? [y/N]: ").strip().lower()
+
+    # If the user confirms with 'y', perform the renaming
+    if confirm == "y":
+        for _, _, file, new_path in files_to_rename:
+            print(f"Renaming: {file.name} -> {new_path.name}")
+            file.rename(new_path)
+        print("\nAll renaming completed.\n")
     else:
-        print(f"Renaming: {file.name} -> {new_path}")
-        file.rename(new_path)
+        # Any other input cancels the operation
+        print("Renaming canceled by user.\n")
 
-    print()
 
-    # Uncomment this line to actually rename the file
-    # file.rename(new_path)
+# ===============================
+# MAIN LOOP: PROCESS FILES
+# ===============================
+
+# # folder.iterdir() loops through everything inside the folder
+# # (files AND directories).
+# for file in folder.iterdir():
+
+#     # file.is_file() ensures we only process files,
+#     # not subfolders.
+#     if not file.is_file():
+#         continue
+
+#     # Ignore hidden files like .DS_Store
+#     if file.name.startswith("."):
+#         continue
+
+#     # Skip non-video and subtitle files
+#     if file.suffix.lower() not in MEDIA_EXTENSIONS:
+#         continue
+
+#     # file.stem returns filename WITHOUT extension.
+#     #
+#     # Example:
+#     # "The.Office.S02E05.mkv"
+#     #
+#     # file.stem → "The.Office.S02E05"
+#     #
+#     season, episode = get_season_episode(file.stem)
+
+#     # If no season/episode was found, skip the file.
+#     if season is None:
+#         print(f"{file.name} -> No match found")
+#         continue
+
+#     # Format the episode code
+#     episode_code = format_episode_code(season, episode)
+
+#     # Extract the show name
+#     show_name = extract_show_name(file.stem)
+
+#     # Build the final filename
+#     new_name = build_new_filename(show_name, episode_code, file.suffix)
+
+#     # file.suffix returns the extension
+#     # Example: ".mkv"
+#     #
+#     new_path = file.with_name(new_name)
+
+#     # Safety check: do not overwrite existing files
+#     if new_path.exists():
+#         print(f"Skipping (file already exists): {new_path}")
+#         continue
+
+#     # Print preview
+#     print(f"Original: {file.name}")
+#     print(f"New name: {new_name}")
+#     print(f"Rename: {file.name} -> {new_name}")
+
+#     if dry_run:
+#         print(f"[DRY RUN] Would rename: {file} -> {new_path}")
+#     else:
+#         print(f"Renaming: {file.name} -> {new_path}")
+#         file.rename(new_path)
+
+#     print()
+
+#     # Uncomment this line to actually rename the file
+#     # file.rename(new_path)
