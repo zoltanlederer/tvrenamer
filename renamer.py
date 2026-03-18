@@ -341,6 +341,7 @@ for file in folder.iterdir():
         continue
 
     # Extract season and episode numbers from the filename
+    # file.stem returns filename WITHOUT extension
     season, episode = get_season_episode(file.stem)
 
     # If no season/episode found, skip this file
