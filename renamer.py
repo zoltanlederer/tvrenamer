@@ -22,9 +22,13 @@ and builds a standardized filename.
 # ===============================
 
 from pathlib import Path
+import sys
 import re
 
 folder = Path('test_files')
+if not folder.exists():
+    print(f'{folder} folder not found!')
+    sys.exit()
 
 VIDEO_EXTENSIONS = {'.mkv', '.mp4', '.avi', '.mov'}
 SUBTITLE_EXTENSIONS = {'.srt', '.sub', '.ass', '.vtt'}
@@ -58,8 +62,8 @@ all_files = get_media_files(folder, MEDIA_EXTENSIONS)
 # for file in subtitle_files:
 #     print(f'Name: {file.name} | Extension: {file.suffix}')
 
-for file in all_files:
-    print(f'Name: {file.name} | Extension: {file.suffix}')
+# for file in all_files:
+#     print(f'Name: {file.name} | Extension: {file.suffix}')
 
 
 def get_episode_code(filename):
@@ -71,27 +75,76 @@ def get_episode_code(filename):
     return None
 
 
-episode_groups = {}
+def rename_episode_groups(episode_groups):  
+    for file in get_media_files(folder, MEDIA_EXTENSIONS):
+        episode_code = get_episode_code(file.name)
+        print('EPISODE_CODE', episode_code)
 
-for file in get_media_files(folder, MEDIA_EXTENSIONS):
-    episode_code = get_episode_code(file.name)
+        if episode_code is None:
+            continue
 
-    if episode_code is None:
-        continue
+        if episode_code not in episode_groups:
+            episode_groups[episode_code] = []
 
-    if episode_code not in episode_groups:
-        episode_groups[episode_code] = []
+        episode_groups[episode_code].append(file)
 
-    episode_groups[episode_code].append(file)
+    print('EPSIODE_GROUPS', episode_groups)
 
-for episode, files in episode_groups.items():
-    print(episode)
-    for file in files:
-        print(f'- {file.name}')
+    for episode, files in episode_groups.items():
+        print('episode', episode)
+
+        for file in files:
+            print(f'- {file.name}')
+        
+        first_file = files[0]
+        show_name = first_file.stem
+        # print(show_name)
+        show_name = show_name.replace('.', ' ').replace('_', ' ')
+        # print(show_name)
+        show_name = show_name.split(episode)[0]
+        show_name = show_name.rstrip(' -')
+        # print('2', show_name)
+        show_name = show_name.strip()
+        # print(show_name)
+
+        new_name = f'{show_name} - {episode}'
+
+        print(new_name)
+
+        for file in files:
+            # print(file.suffix)
+            # print(new_name)
+            final_name = f'{new_name}{file.suffix}'
+            print(final_name)
+
+            if file.name == final_name:
+                continue
+
+            new_path = file.with_name(final_name)
+            file.rename(new_path)
+
+
+rename_episode_groups({})
+
+
+    # print(type(file))
+    # print(dir(file))
+    # print(file.with_name('test.mkv'))
+    # for item in dir(file):
+    #     print(item)
+   
+# print(all_files)
+# for file in all_files:
+#     print(file)
+#     print(file.with_name('test.mkv'))
+#     new_path = file.with_name('test_file.mkv')
+#     file.rename(new_path)
+
+#     break
 
 
 
-
+# print('episode+groups -> ', episode_groups)
 
 
 
