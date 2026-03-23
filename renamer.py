@@ -24,8 +24,13 @@ and builds a standardized filename.
 from pathlib import Path
 import sys
 import re
+import argparse
 
-folder = Path('test_files')
+parser = argparse.ArgumentParser()
+parser.add_argument('--folder', required=True)
+args = parser.parse_args()
+
+folder = Path(args.folder)
 if not folder.exists():
     print(f'{folder} folder not found!')
     sys.exit()
