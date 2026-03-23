@@ -67,7 +67,6 @@ def rename_episode_groups(episode_groups, folder, dry_run):
 
     # Create the groups
     for file in get_media_files(folder, MEDIA_EXTENSIONS):
-        # print('**********', type(file))
         episode_code = get_episode_code(file.name) # episode codes e.g. S02E05
 
         if episode_code is None:
