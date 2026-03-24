@@ -25,9 +25,11 @@ import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--folder', default='test_files')
 parser.add_argument('-d', '--dry-run', action='store_true')
+parser.add_argument('-v', '--verbose', action='store_true')
 args = parser.parse_args()
 
 dry_run = args.dry_run
+verbose = args.verbose
 
 VIDEO_EXTENSIONS = {'.mkv', '.mp4', '.avi', '.mov'}
 SUBTITLE_EXTENSIONS = {'.srt', '.sub', '.ass', '.vtt'}
@@ -63,7 +65,7 @@ def get_episode_code(filename):
 
 
 def group_files(folder):
-    """ Group together the files by their season/episode, including cleaning the file names. """
+    """Group files from the folder together by their episode code."""
     
     episode_groups = {}
 
@@ -75,23 +77,24 @@ def group_files(folder):
             continue
 
         if episode_code not in episode_groups:
-            episode_groups[episode_code] = [] # Create a list within the episode_goups dict, e.g. {'S02E05': [PosixPath('test_files/The Office - S02E05.mkv'), PosixPath('test_files/The Office - S02E05.srt')], 'S02E06': [PosixPath('test_files/The Office - S02E06.mkv'), PosixPath('test_files/The Office - S02E06.srt')]}
+            episode_groups[episode_code] = [] # Create a list within the episode_groups dict, e.g. {'S02E05': [PosixPath('test_files/The Office - S02E05.mkv'), PosixPath('test_files/The Office - S02E05.srt')], 'S02E06': [PosixPath('test_files/The Office - S02E06.mkv'), PosixPath('test_files/The Office - S02E06.srt')]}
 
         episode_groups[episode_code].append(file) # Add file object (file path) to the list
     
     return episode_groups
 
 
-def rename_files(episode_groups, dry_run):
-    """ Rename files. If we use the dry_run mode it won't rename it, only print the result instead. """
+def rename_files(episode_groups, dry_run, verbose):
+    """ Rename files, including cleaning the file names. If we use the dry_run mode it won't rename it, only print the result instead. """
 
     # Rename the files based on which episode code (S02E05) has
     for episode, files in episode_groups.items():
         # episode: S02E05
         # files: list of path e.g. [PosixPath('test_files/The Office - S02E05.mkv'), PosixPath('test_files/The Office - S02E05.srt')]
-        print('episode', episode)
-        for file in files:
-            print(f'- {file.name}')
+        if verbose:
+            print('episode', episode)
+            for file in files:
+                print(f'- {file.name}')
         
         first_file = files[0] # use the first file's name only, to rename all files within the group
 
@@ -119,4 +122,4 @@ def rename_files(episode_groups, dry_run):
 
 
 episode_groups = group_files(folder)
-rename_files(episode_groups, dry_run)
+rename_files(episode_groups, dry_run, verbose)
