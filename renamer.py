@@ -119,8 +119,12 @@ def rename_files(renames, dry_run):
             except Exception as e:
                 result["failed"].append(str(e))
         else:
-            print(new_path)
-
+            # print(new_path)
+            try:
+                result["succeeded"].append(new_name)
+            except Exception as e:
+                result["failed"].append(str(e))
+    
     return result
 
 def prepare_renames(episode_groups):
@@ -150,6 +154,14 @@ def show_preview(renames):
         print(f'{old_name.stem} -> {new_name}')
 
 
+def show_summary(result):
+    """ Display the result after renaming the files """
+    if result['failed']:
+        print(f"{len(result['succeeded'])} file(s) successfully renamed, {len(result['failed'])} file(s) failed: {result['failed']}")
+    else:
+        print(f"{len(result['succeeded'])} file(s) successfully renamed, 0 file(s) failed.")
+
+
 def confirm():
     answer = input('Proceed? [y/N]: ').strip().lower()
     if answer in ('y', 'yes'):
@@ -164,5 +176,5 @@ renames = prepare_renames(episode_groups)
 show_preview(renames)
 
 if confirm():    
-    rename_files(renames, dry_run)
-
+    result = rename_files(renames, dry_run)
+    show_summary(result)
