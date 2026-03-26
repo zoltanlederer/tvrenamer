@@ -150,8 +150,12 @@ def prepare_renames(episode_groups):
 def show_preview(renames):
     """ Display the before/after table for the renamed files """
     
+    print("-" * 70)
+    print(f"{'Original Name':<40} {'New Name':<40}")
+    print("-" * 70)
     for old_name, new_name in renames:
-        print(f'{old_name.stem} -> {new_name}')
+        print(f'{old_name.name:<40} {new_name + old_name.suffix:<40}')
+    print("-" * 70)
 
 
 def show_summary(result):
