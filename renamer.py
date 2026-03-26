@@ -24,10 +24,12 @@ import argparse
 
 parser = argparse.ArgumentParser(description='The program scans a folder containing TV episode files and renames them into a clean format including the episode titles.')
 parser.add_argument('-f', '--folder', default='test_files', help='add the path of the folder')
+parser.add_argument('-s', '--style', default='dot', choices=['dot', 'space', 'dash', 'plex'], help='choose the output filename style: dot (default) → The.Office.S02E05.mkv | space → The Office S02E05.mkv | dash → The-Office-S02E05.mkv | plex → The Office - S02E05.mkv ')
 parser.add_argument('-d', '--dry-run', action='store_true', help='run the program without renaming the files, perfect for testing')
 parser.add_argument('-v', '--verbose', action='store_true', help='show detailed output for each file processed')
 args = parser.parse_args()
 
+style = args.style
 dry_run = args.dry_run
 verbose = args.verbose
 
@@ -84,18 +86,26 @@ def group_files(folder):
     return episode_groups # e.g. {'S02E05': [PosixPath('test_files/The Office - S02E05.mkv'), PosixPath('test_files/The Office - S02E05.srt')], 'S02E06': [PosixPath('test_files/The Office - S02E06.mkv'), PosixPath('test_files/The Office - S02E06.srt')]}
 
 
-def build_new_filename(filename, episode_code):
+def build_new_filename(filename, episode_code, style):
     """Return a clean show name and episode code as a filename string, e.g. 'The Office - S02E05'"""
     # episode_code: S02E05
-    # filename: Path object e.g. PosixPath('test_files/The Office - S02E05.mkv')
+    # filename: Path object e.g. PosixPath('test_files/The.Office.S02E06.720p.WEB-DL.mkv')
 
-    show_name = filename.stem # file name without suffix e.g. The Office - S02E05
-    show_name = show_name.replace('.', ' ').replace('_', ' ')
-    show_name = show_name.split(episode_code)[0] # keep only the part before the episode code, e.g. "The Office -"
-    show_name = show_name.rstrip(' -') # remove the trailing " -", e.g. "The Office -" -> "The Office"
-    show_name = show_name.strip() # remove extra space after the name, e.g. "The Office "
+    # Clean the show name
+    show_name = filename.stem # file name without suffix e.g. The.Office.S02E06.720p.WEB-DL
+    show_name = show_name.replace('.', ' ').replace('_', ' ').replace('-', ' ') # e.g. The Office S02E06 720p WEB DL
+    show_name = show_name.split(episode_code)[0] # keep only the part before the episode code, e.g. "The Office "
+    show_name = show_name.strip() # remove leading and trailing spaces "The Office"
 
-    return f'{show_name} - {episode_code}' # Create the new file name string (without extension)
+    # Create the new file name string (without extension)
+    if style == 'dot':
+        return f'{show_name.replace(" ", ".")}.{episode_code}'
+    elif style == 'space':
+        return f'{show_name} {episode_code}'
+    elif style == 'dash':
+        return f'{show_name.replace(" ", "-")}-{episode_code}'
+    elif style == 'plex':
+        return f'{show_name} - {episode_code}'
 
 
 def rename_files(renames, dry_run):
@@ -127,7 +137,7 @@ def rename_files(renames, dry_run):
     
     return result
 
-def prepare_renames(episode_groups):
+def prepare_renames(episode_groups, style):
     """ Prepare the files to rename in a tuple as old path and new name. Also check for file name conflicts. """
 
     # episode_groups e.g. {'S02E05': [PosixPath('test_files/The.Office.S02E05.mkv'), PosixPath('test_files/The.Office.S02E05.srt')], 'S02E06': [PosixPath('test_files/The.Office.S02E06.mkv'), PosixPath('test_files/The.Office.S02E06.srt')]}
@@ -136,13 +146,18 @@ def prepare_renames(episode_groups):
     used_names = set() # track used filenames to prevent duplicate names and accidental file overwrites
     for episode, files in episode_groups.items():
         for file in files:
-            new_name = build_new_filename(file, episode)
+            new_name = build_new_filename(file, episode, style)
 
             original_name = new_name # store the original file name in case of name conflict
             counter = 2
             # if the new_name exists in the used_names, then run the loop and append a number in brackets, e.g. (2)
             while new_name + file.suffix in used_names:
-                new_name = f'{original_name} ({counter})'
+                if style == 'dot':
+                    new_name = f'{original_name}.({counter})'
+                elif style == 'dash':
+                    new_name = f'{original_name}-({counter})'
+                else:
+                    new_name = f'{original_name} ({counter})'
                 counter += 1
 
             used_names.add(new_name + file.suffix) # include extension to avoid false conflicts between .mkv and .srt
@@ -186,7 +201,7 @@ def confirm():
 
 
 episode_groups = group_files(folder)
-renames = prepare_renames(episode_groups)
+renames = prepare_renames(episode_groups, style)
 show_preview(renames)
 
 if confirm():    
