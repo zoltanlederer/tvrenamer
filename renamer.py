@@ -66,13 +66,13 @@ def get_episode_code(filename):
     return None
 
 
-def group_files(folder):
-    """Group files from the folder together by their episode code."""
+def group_files(video_files):
+    """Group media files by their episode code and return a dictionary."""
     
     episode_groups = {}
 
     # Create the groups
-    for file in get_media_files(folder, MEDIA_EXTENSIONS):
+    for file in video_files:
         episode_code = get_episode_code(file.name) # episode codes e.g. S02E05
 
         if episode_code is None:
@@ -129,7 +129,6 @@ def rename_files(renames, dry_run):
             except Exception as e:
                 result["failed"].append(f"{old_name.name} -> {final_name}")
         else:
-            # print(new_path)
             try:
                 result["succeeded"].append(new_name)
             except Exception as e:
@@ -223,7 +222,7 @@ def confirm():
         return False
 
 video_files = get_media_files(folder, MEDIA_EXTENSIONS)
-episode_groups = group_files(folder)
+episode_groups = group_files(video_files)
 renames = prepare_renames(video_files, episode_groups, style)
 show_preview(renames)
 
