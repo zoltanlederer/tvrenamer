@@ -127,13 +127,13 @@ def rename_files(renames, dry_run):
                 old_name.rename(new_path)
                 result["succeeded"].append(new_name)
             except Exception as e:
-                result["failed"].append(str(e))
+                result["failed"].append(f"{old_name.name} -> {final_name}")
         else:
             # print(new_path)
             try:
                 result["succeeded"].append(new_name)
             except Exception as e:
-                result["failed"].append(str(e))
+                result["failed"].append(f"{old_name.name} -> {final_name}")
     
     return result
 
@@ -201,11 +201,18 @@ def show_preview(renames):
 
 def show_summary(result):
     """ Display the result after renaming the files """
-    if result['failed']:
-        print(f"{len(result['succeeded'])} file(s) successfully renamed, {len(result['failed'])} file(s) failed: {result['failed']}")
-    else:
-        print(f"{len(result['succeeded'])} file(s) successfully renamed, 0 file(s) failed.")
 
+    print("-" * 70)
+    print("Summary")
+    print("-" * 70)
+    print(f"✅ {len(result['succeeded'])} file(s) successfully renamed")
+    if result['failed']:    
+        print(f"❌ {len(result['failed'])} file(s) failed")
+        for file in result['failed']:
+            print(f"   • {file}")
+    else:
+        print(f"❌ 0 file(s) failed")
+    print("-" * 70)
 
 def confirm():
     answer = input('Proceed? [y/N]: ').strip().lower()
