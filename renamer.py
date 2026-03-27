@@ -183,12 +183,20 @@ def prepare_renames(video_files, episode_groups, style):
 def show_preview(renames):
     """ Display the before/after table for the renamed files """
     
-    print("-" * 70)
-    print(f"{'Original Name':<40} {'New Name':<40}")
-    print("-" * 70)
+    unchanged = 0
+    max_width = max(len(old_name.name) for old_name, _ in renames) # calculate the longest filename dynamically and use that as the column width
+    print("-" * (max_width + 30))
+    print(f"{'Original Name':<{max_width}} {'New Name':<{max_width}}")
+    print("-" * (max_width + 30))
     for old_name, new_name in renames:
-        print(f'{old_name.name:<40} {new_name + old_name.suffix:<40}')
-    print("-" * 70)
+        if old_name.stem == new_name:
+            print(f'{old_name.name:<{max_width}} {"(no change)":<{max_width}}')
+            unchanged += 1
+        else:
+            print(f'{old_name.name:<{max_width}} {new_name + old_name.suffix:<{max_width}}')
+    print("-" * (max_width + 30))
+    print(f"Total: {len(renames)} files | To rename: {len(renames)-unchanged} | No change: {unchanged}")
+    print("-" * (max_width + 30))
 
 
 def show_summary(result):
