@@ -119,6 +119,9 @@ def build_new_filename(filename, episode_code, style):
         return f'{show_name.replace(" ", "-")}-{episode_code}'
     elif style == 'plex':
         return f'{show_name} - {episode_code}'
+    else:
+        # fallback in case style is unknown
+        return f'{show_name} - {episode_code}'
 
 
 def rename_files(renames, dry_run):
