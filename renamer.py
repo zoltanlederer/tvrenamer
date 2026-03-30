@@ -15,6 +15,7 @@ from pathlib import Path
 import sys
 import re
 import argparse
+import requests
 
 parser = argparse.ArgumentParser(description='The program scans a folder containing TV episode files and renames them into a clean format including the episode titles.')
 parser.add_argument('-f', '--folder', default='test_files', help='add the path of the folder')
@@ -86,11 +87,11 @@ def group_files(video_files):
     return episode_groups # e.g. {'S02E05': [PosixPath('test_files/The Office - S02E05.mkv'), PosixPath('test_files/The Office - S02E05.srt')], 'S02E06': [PosixPath('test_files/The Office - S02E06.mkv'), PosixPath('test_files/The Office - S02E06.srt')]}
 
 
-def build_new_filename(filename, episode_code, style):
-    """Return a clean show name and episode code as a filename string, e.g. 'The Office - S02E05'"""
+def extract_show_name(filename, episode_code):
+    """Return only a clean show name"""
     # episode_code: S02E05
     # filename: Path object e.g. PosixPath('test_files/The.Office.S02E06.720p.WEB-DL.mkv')
-    # print(f'episode_code in build_new_filename: {episode_code}')
+
     episode_code_no_dash = episode_code.replace('-', '')  # remove dash: S02E09-E10 -> S02E09E10
     episode_code_dash_as_space = episode_code.replace('-', ' ')  # dash to space: S02E09-E10 -> S02E09 E10
 
@@ -106,6 +107,14 @@ def build_new_filename(filename, episode_code, style):
     show_name = show_name.strip() # remove leading and trailing spaces "The Office"
     show_name = show_name.title()  # convert to title case
 
+    return show_name #The Office
+
+
+def build_new_filename(filename, episode_code, style):
+    """Return a clean show name and episode code as a filename string, e.g. 'The Office - S02E05'"""
+   
+    show_name = extract_show_name(filename, episode_code)
+
     # Create the new file name string (without extension)
     if style == 'dot':
         return f'{show_name.replace(" ", ".")}.{episode_code}'
@@ -118,6 +127,7 @@ def build_new_filename(filename, episode_code, style):
     else:
         # fallback in case style is unknown
         return f'{show_name} - {episode_code}'
+
 
 def rename_files(renames, dry_run):
     """ Rename files based on prepared (old_path, new_name) pairs. If dry_run is True, only simulate the renaming without modifying files. """
@@ -141,6 +151,7 @@ def rename_files(renames, dry_run):
             result["succeeded"].append(new_name)
     
     return result
+
 
 def prepare_renames(video_files, episode_groups, style):
     """ Prepare the files to rename in a tuple as old path and new name. Also check for file name conflicts. """
@@ -225,6 +236,7 @@ def show_summary(result, dry_run):
         print(f"❌ 0 file(s) failed")
     print("-" * 70)
 
+
 def confirm():
     answer = input('Proceed? [y/N]: ').strip().lower()
     if answer in ('y', 'yes'):
@@ -233,11 +245,31 @@ def confirm():
         print('Process cancelled')
         return False
 
+
+def extract_season_episode_numbers(episode_code):
+    season = episode_code[1:3]
+    episode = episode_code[4:6]
+
+    return {'season': season, 'episode': episode}
+
+
+def get_show_id(show_name):
+    show_url = f'https://api.tvmaze.com/singlesearch/shows?q={show_name}'
+    print(show_url)
+    # show_details = requests.get(show_url)
+    # print(show_details)
+
 video_files = get_media_files(folder, MEDIA_EXTENSIONS)
 episode_groups = group_files(video_files)
 renames = prepare_renames(video_files, episode_groups, style)
 show_preview(renames)
 
+# show_name = get_show_name(renames)
+# get_show_id(show_name)
+
 if confirm():
     result = rename_files(renames, dry_run)
     show_summary(result, dry_run)
+
+# code = extract_season_episode_numbers("S02E05")
+# print(code['season'])
