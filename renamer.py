@@ -126,25 +126,23 @@ def build_new_filename(filename, episode_code, style):
         return f'{show_name} - {episode_code}'
 
 def rename_files(renames, dry_run):
-    """ Rename files, including cleaning the file names. If we use the dry_run mode it won't rename it, only print the result instead. """
-
+    """ Rename files based on prepared (old_path, new_name) pairs. If dry_run is True, only simulate the renaming without modifying files. """
+    
     result = { "succeeded": [], "failed": [] } #{'succeeded': ['The Office - S02E05', ''The Office - S02E06'], 'failed': ['The Office - S02E07']}
     # Rename the files based on the prepared pairs
     for old_name, new_name in renames:
         # Rename the files with the new string
-        final_name = f'{new_name}{old_name.suffix}' # e.g. The Office - S02E05.mkv
-
-        if old_name.name == final_name:
+        if old_name.name == new_name:
             continue # skip if the file is already correctly named
 
-        new_path = old_name.with_name(final_name) # Create the full path for the rename, e.g. test_files/The Office - S02E05.mkv
+        new_path = old_name.with_name(new_name) # Create the full path for the rename, e.g. test_files/The Office - S02E05.mkv
         
         if not dry_run:
             try:  
                 old_name.rename(new_path)
                 result["succeeded"].append(new_name)
             except Exception as e:
-                result["failed"].append(f"{old_name.name} -> {final_name}")
+                result["failed"].append(f"{old_name.name} -> {new_name}")
         else:
             result["succeeded"].append(new_name)
     
@@ -169,7 +167,7 @@ def prepare_renames(video_files, episode_groups, style):
             original_name = new_name # store the original file name in case of name conflict
             counter = 2
             
-            used_names.discard(file.name)  # remove current file before checking conflicts
+            used_names.discard(file.name)  # temporarily removes the current file so it doesn't conflict with itself
 
             # if the new_name exists in the used_names, then run the loop and append a number in brackets, e.g. (2)
             while new_name + file.suffix in used_names:
@@ -182,7 +180,7 @@ def prepare_renames(video_files, episode_groups, style):
                 counter += 1
 
             used_names.add(new_name + file.suffix) # include extension to avoid false conflicts between .mkv and .srt
-            pair = (file, new_name)  
+            pair = (file, new_name + file.suffix) # creates a tuple e.g. (PosixPath('test_files/...'), 'The.Office.S02E05.mkv')
             renames.append(pair)
 
     # returns: e.g.  
@@ -203,11 +201,11 @@ def show_preview(renames):
     print(f"{'Original Name':<{max_width}} {'New Name':<{max_width}}")
     print("-" * (max_width + 30))
     for old_name, new_name in sorted_renames:
-        if old_name.stem == new_name:
+        if old_name.name == new_name:
             print(f'{old_name.name:<{max_width}} {"(no change)":<{max_width}}')
             unchanged += 1
         else:
-            print(f'{old_name.name:<{max_width}} {new_name + old_name.suffix:<{max_width}}')
+            print(f'{old_name.name:<{max_width}} {new_name:<{max_width}}')
     print("-" * (max_width + 30))
     print(f"Total: {len(sorted_renames)} files | To rename: {len(sorted_renames)-unchanged} | No change: {unchanged}")
     print("-" * (max_width + 30))
