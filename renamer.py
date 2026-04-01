@@ -144,6 +144,7 @@ def build_new_filename(filename, episode_code, episodes_title, style):
             return f'{base} - {episodes_title.title()}'
         return base
 
+
 def prepare_renames(video_files, episode_groups, all_episodes_title, style):
     """ Prepare the files to rename in a tuple as old path and new name. Also check for file name conflicts. """
 
@@ -258,25 +259,51 @@ def show_summary(result, dry_run):
 
 def get_show_id(show_name):
     """ Fetch TV show ID from TVmaze API """
-    show_url = f'https://api.tvmaze.com/singlesearch/shows?q={show_name}'
-    show_details = requests.get(show_url).json()
-    show_id = show_details['id']
-    return show_id
+    try:
+        show_url = f'https://api.tvmaze.com/singlesearch/shows?q={show_name}'
+        show_details = requests.get(show_url).json()
+        show_id = show_details['id']
+        return show_id
+    except requests.exceptions.ConnectionError:
+        print('No internet connection. Please check your network.')
+        sys.exit()
+    except requests.exceptions.Timeout:
+        print('Request timed out.')
+        sys.exit()
+    except KeyError:
+        print(f'Show "{show_name}" not found on TVmaze.')
+        sys.exit()
+    except Exception as e:
+        print('Something went wrong, please try again.')
+        sys.exit()
 
 
 def get_all_episodes_title(show_id):
     """ Fetch TV show's all episodes title into a dictionary"""
 
-    episodes_url = f"https://api.tvmaze.com/shows/{show_id}/episodes"
-    episodes_details = requests.get(episodes_url).json()
-    dictionary_of_episodes = {}
+    try:
+        episodes_url = f"https://api.tvmaze.com/shows/{show_id}/episodes"
+        episodes_details = requests.get(episodes_url).json()
+        dictionary_of_episodes = {}
 
-    for episode in episodes_details:
-        episode_code = f"S{episode['season']:02}E{episode['number']:02}"
-        episode_title = f"{episode['name']}"
-        dictionary_of_episodes[episode_code] = episode_title
+        for episode in episodes_details:
+            episode_code = f"S{episode['season']:02}E{episode['number']:02}"
+            episode_title = f"{episode['name']}"
+            dictionary_of_episodes[episode_code] = episode_title
 
-    return dictionary_of_episodes # e.g. {'S01E01': 'Pilot', 'S01E02': 'Diversity Day'....}
+        return dictionary_of_episodes # e.g. {'S01E01': 'Pilot', 'S01E02': 'Diversity Day'....}
+    except requests.exceptions.ConnectionError:
+        print('No internet connection. Please check your network.')
+        sys.exit()
+    except requests.exceptions.Timeout:
+        print('Request timed out.')
+        sys.exit()
+    except KeyError:
+        print(f'Could not fetch episodes for show ID {show_id}.')
+        sys.exit()
+    except Exception as e:
+        print('Something went wrong, please try again.')
+        sys.exit()
 
 
 def confirm():
