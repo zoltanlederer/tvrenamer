@@ -88,7 +88,7 @@ def group_files(video_files):
 
 
 def extract_show_name(filename, episode_code):
-    """Return only a clean show name"""
+    """Return only a clean show name from the folder"""
     # episode_code: S02E05
     # filename: Path object e.g. PosixPath('test_files/The.Office.S02E06.720p.WEB-DL.mkv')
 
@@ -110,10 +110,10 @@ def extract_show_name(filename, episode_code):
     return show_name #The Office
 
 
-def build_new_filename(filename, episode_code, episodes_title, style):
+def build_new_filename(official_name, episode_code, episodes_title, style):
     """Return a formatted show name with episode code and title as a filename string, e.g. 'The Office - S02E05 - Title'"""
-   
-    show_name = extract_show_name(filename, episode_code)
+    
+    show_name = official_name # e.g. The Office
 
     # Create the new file name string (without extension)
     # also check if episode code in the file doesn't exist e.g. The.Office.S99E99.mkv in that case just return the base format, otherwise includes the title
@@ -145,14 +145,13 @@ def build_new_filename(filename, episode_code, episodes_title, style):
         return base
 
 
-def prepare_renames(video_files, episode_groups, all_episodes_title, style):
+def prepare_renames(video_files, episode_groups, all_episodes_title, style, official_name):
     """ Prepare the files to rename in a tuple as old path and new name. Also check for file name conflicts. """
-
     # episode_groups e.g. {'S02E05': [PosixPath('test_files/The.Office.S02E05.mkv'), PosixPath('test_files/The.Office.S02E05.srt')], 'S02E06': [PosixPath('test_files/The.Office.S02E06.mkv'), PosixPath('test_files/The.Office.S02E06.srt')]}
+    
     # Create pairs of files based on which episode code (S02E05) has in the group
     renames = []
     used_names = set() # track used filenames to prevent duplicate names and accidental file overwrites
-
     # Add all existing files to used_names to prevent overwriting them during rename
     for file in video_files:
         used_names.add(file.name)
@@ -160,10 +159,10 @@ def prepare_renames(video_files, episode_groups, all_episodes_title, style):
     # e.g. episode_code => S02E05
     # e.g. files => [PosixPath('test_files/The.Office.S02E05.mkv'), PosixPath('test_files/The Office - S02E05.mkv')]
     for episode_code, files in episode_groups.items():
-        # e.g. filename => test_files/The.Office.S02E05.mkv
+        # e.g. filename => test_files/The.Office.S02E05.mkv        
         for filename in files:
             # all_episodes_title.get(episode_code, None) => returns None if episode code not found, instead of crashing with KeyError (instead of => all_episodes_title[episode_code])
-            new_name = build_new_filename(filename, episode_code, all_episodes_title.get(episode_code, None), style) # e.g. The.Office.S02E05.Title
+            new_name = build_new_filename(official_name, episode_code, all_episodes_title.get(episode_code, None), style) # e.g. The.Office.S02E05.Title
             
             original_name = new_name # store the original file name in case of name conflict
             counter = 2
@@ -184,11 +183,12 @@ def prepare_renames(video_files, episode_groups, all_episodes_title, style):
             pair = (filename, new_name + filename.suffix) # creates a tuple e.g. (PosixPath('test_files/...'), 'The.Office.S02E05.title.mkv')
             renames.append(pair)
 
+    print(renames)
     # returns: e.g.  
-    # [(PosixPath('test_files/The.Office.S02E05.title.mkv'), 'The Office - S02E05.title.mkv'),
-    # (PosixPath('test_files/The.Office.S02E05.title.srt'), 'The Office - S02E05.title.srt'),
-    # (PosixPath('test_files/The.Office.S02E06.title.mkv'), 'The Office - S02E06.title.mkv'),
-    # (PosixPath('test_files/The.Office.S02E06.title.srt'), 'The Office - S02E06.title.mkv')]
+    # [(PosixPath('test_files/The.Office.S02E05.mkv'), 'The Office - S02E05 - Halloween.mkv'),
+    # (PosixPath('test_files/The.Office.S02E05.srt'), 'The Office - S02E05 - Halloween.srt'),
+    # (PosixPath('test_files/The.Office.S02E06.mkv'), 'The Office - S02E06 - The Fight.mkv'),
+    # (PosixPath('test_files/The.Office.S02E06.srt'), 'The Office - S02E06 - The Fight.srt')]
     return renames
 
 
@@ -257,13 +257,14 @@ def show_summary(result, dry_run):
     print("-" * 70)
 
 
-def get_show_id(show_name):
-    """ Fetch TV show ID from TVmaze API """
+def get_show_detail(show_name):
+    """ Fetch TV show ID and name from TVmaze API """
     try:
         show_url = f'https://api.tvmaze.com/singlesearch/shows?q={show_name}'
         show_details = requests.get(show_url).json()
         show_id = show_details['id']
-        return show_id
+        show_name = show_details['name']        
+        return {'id': show_id, 'name': show_name}
     except requests.exceptions.ConnectionError:
         print('No internet connection. Please check your network.')
         sys.exit()
@@ -342,12 +343,14 @@ episode_groups = group_files(video_files)
 # Get show name and fetch episode titles from API
 episode_code = get_episode_code(video_files[0].name) # e.g. S02E05
 show_name = extract_show_name(video_files[0], episode_code)
-show_name = confirm_show_name(show_name)
-show_id = get_show_id(show_name)
-all_episodes_title = get_all_episodes_title(show_id)
+show_name_confirmed = confirm_show_name(show_name)
+show_detail = get_show_detail(show_name_confirmed) # use confirmed name
+official_name = show_detail['name'] # Use the show name from TVmaze API
+
+all_episodes_title = get_all_episodes_title(show_detail['id'])
 
 # Prepare renames with episode titles
-renames = prepare_renames(video_files, episode_groups, all_episodes_title, style)
+renames = prepare_renames(video_files, episode_groups, all_episodes_title, style, official_name)
 show_preview(renames)
 
 if confirm():
