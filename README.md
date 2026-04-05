@@ -56,8 +56,11 @@ Options:
   -h, --help            show this help message and exit
   -f, --folder FOLDER   add the path of the folder
   -s, --style {dot,space,dash,plex}
-                        choose the output filename style: dot (default) → The.Office.S02E05.mkv | space → The Office S02E05.mkv | dash → The-
-                        Office-S02E05.mkv | plex → The Office - S02E05.mkv
+                        choose the output filename style: 
+                        - dot (default) → The.Office.S02E05.mkv 
+                        - space → The Office S02E05.mkv 
+                        - dash → The-Office-S02E05.mkv 
+                        - plex → The Office - S02E05.mkv
   -d, --dry-run         run the program without renaming the files, perfect for testing
   -v, --verbose         show detailed output for each file processed
 ```
