@@ -67,7 +67,14 @@ Options:
 
 ## Examples
 ```bash
-$ python3 renamer.py -s plex
+# Preview without renaming (dry run)
+python3 renamer.py -f /path/to/your/shows -d
+
+# Rename with default dot style
+python3 renamer.py -f /path/to/your/shows
+
+# Rename with plex style
+python3 renamer.py -f /path/to/your/shows -s plex
 Confirm TV Show name: The Office
 Press Enter to accept, or type a new name
 ('q' to quit): 
@@ -86,6 +93,27 @@ Summary
 ✅ 2 file(s) successfully renamed
 ❌ 0 file(s) failed
 ----------------------------------------------------------------------
+```
+
+## Tips
+
+### Easy folder selection (macOS)
+Type the command with `-f ` (note the space), then drag the folder from Finder directly into the terminal:
+```bash
+python3 renamer.py -f 
+```
+Then drag your folder here ↑
+
+### Easy folder selection (Windows)
+In Explorer, hold `Shift` and right-click your folder, then select "Copy as path". Paste it after `-f`:
+```bash
+python3 renamer.py -f "C:\Users\you\Videos\The Office"
+```
+
+### Network drives (NAS, Synology etc.)
+Mount your NAS first, then use the mounted path:
+```bash
+python3 renamer.py -f "/Volumes/Media/TV Shows/The Office"
 ```
 
 ## Credits
