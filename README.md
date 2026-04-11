@@ -41,7 +41,7 @@ cd tvrenamer
 
 Install dependencies:
 ```bash
-pip3 install requests
+pip install requests
 ```
 
 ## Usage & Options
