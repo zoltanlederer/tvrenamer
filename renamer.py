@@ -114,34 +114,35 @@ def build_new_filename(official_name, episode_code, episodes_title, style):
     """Return a formatted show name with episode code and title as a filename string, e.g. 'The Office - S02E05 - Title'"""
     
     show_name = official_name # e.g. The Office
+    clean_title = re.sub(r'[:\?,\*\|\"<>/\\]', '', episodes_title) if episodes_title else None # Remove characters that are illegal in filenames such as : and ?
 
     # Create the new file name string (without extension)
     # also check if episode code in the file doesn't exist e.g. The.Office.S99E99.mkv in that case just return the base format, otherwise includes the title
     if style == 'dot':
         base = f'{show_name.replace(" ", ".")}.{episode_code}'
-        if episodes_title: 
-            return f'{base}.{episodes_title.replace(" ", ".").title()}'
+        if clean_title: 
+            return f'{base}.{clean_title.replace(" ", ".")}'
         return base
     elif style == 'space':
         base = f'{show_name} {episode_code}'
-        if episodes_title:
-            return f'{base} {episodes_title}'
+        if clean_title:
+            return f'{base} {clean_title}'
         return base
     elif style == 'dash':
         base = f'{show_name.replace(" ", "-")}-{episode_code}'
-        if episodes_title:
-            return f'{base}-{episodes_title.replace(" ", "-").title()}'
+        if clean_title:
+            return f'{base}-{clean_title.replace(" ", "-")}'
         return base
     elif style == 'plex':
         base = f'{show_name} - {episode_code}'
-        if episodes_title:
-            return f'{base} - {episodes_title.title()}'
+        if clean_title:
+            return f'{base} - {clean_title}'
         return base
     else:
         # fallback in case style is unknown
         base = f'{show_name} - {episode_code}'
-        if episodes_title:
-            return f'{base} - {episodes_title.title()}'
+        if clean_title:
+            return f'{base} - {clean_title}'
         return base
 
 
