@@ -56,7 +56,7 @@ def get_media_files(folder, extensions):
 def get_episode_code(filename):
     """Return the episode code in S02E05 format, or None if not found."""
     
-    match = re.search(r"S\d{2}E\d{2}-?(E\d{2})?", filename, re.IGNORECASE)    
+    match = re.search(r"S\d{2}E\d{2}-?(E\d{2})?", filename, re.IGNORECASE)  
     if match:
         raw = match.group().replace('-', '') # always remove dash S02E05E06
         # if it has a second episode (length > 6)
@@ -113,8 +113,8 @@ def extract_show_name(filename, episode_code):
 def build_new_filename(official_name, episode_code, episodes_title, style):
     """Return a formatted show name with episode code and title as a filename string, e.g. 'The Office - S02E05 - Title'"""
     
-    show_name = official_name # e.g. The Office
-    clean_title = re.sub(r'[:\?,\*\|\"<>/\\]', '', episodes_title) if episodes_title else None # Remove characters that are illegal in filenames such as : and ?
+    show_name = re.sub(r'[:\?,\*\|\"<>/\\]', '', official_name) # e.g. The Office. - Remove characters that are illegal in filenames such as : and ?
+    clean_title = re.sub(r'[:\?,\*\|\"<>/\\]', '', episodes_title) if episodes_title else None
 
     # Create the new file name string (without extension)
     # also check if episode code in the file doesn't exist e.g. The.Office.S99E99.mkv in that case just return the base format, otherwise includes the title
